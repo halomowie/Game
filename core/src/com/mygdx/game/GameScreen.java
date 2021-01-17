@@ -1,10 +1,18 @@
 package com.mygdx.game;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.PolygonBatch;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.math.MathUtils;
@@ -13,11 +21,6 @@ class GameScreen implements Screen {
 
     //temp & testing
 
-    private float countDown;
-
-    private int randomNumber;
-
-    int randomNum;
 
     //screen
     private Camera camera;
@@ -27,12 +30,19 @@ class GameScreen implements Screen {
 
     private SpriteBatch batch;
     private Texture background;
-    private Texture[][] Tiles;
-    //timing
+
+
 
     //world parameters
-    private final int WORLD_WIDTH = 600;
-    private final int WORLD_HEIGHT = 600;
+    private final int WORLD_WIDTH = 1240;
+    private final int WORLD_HEIGHT = 640;
+
+    //map
+    Map gameMap;
+
+
+
+
 
     GameScreen() {
 
@@ -42,14 +52,10 @@ class GameScreen implements Screen {
         //background
         background = new Texture("background.jpg");
 
-        //tiles
-        Tiles = new Texture[8][8];
-        Tiles[0][0] = new Texture("medievalTile_46.png");
-        Tiles[1][0] = new Texture("medievalTile_58.png");
 
         batch = new SpriteBatch();
 
-
+        gameMap = new Map();
     }
 
     @Override
@@ -58,17 +64,15 @@ class GameScreen implements Screen {
 
         batch.draw(background,0,0,WORLD_WIDTH,WORLD_HEIGHT);
 
-        for(int x = 0; x < 8; x++) {
-            for(int y = 0; y < 8; y++) {
-
-                batch.draw(Tiles[1][0], 20 + 70 * x, 20 + 70 * y, 60, 60);
-
-            }
-        }
+        gameMap.mouseOnMap();
+        gameMap.drawMap(batch);
 
         batch.end();
 
+
     }
+
+
 
     @Override
     public void resize(int width, int height) {
@@ -100,4 +104,5 @@ class GameScreen implements Screen {
     public void dispose() {
 
     }
+
 }
