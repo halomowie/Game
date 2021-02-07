@@ -1,23 +1,17 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.PolygonBatch;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.badlogic.gdx.math.MathUtils;
 
-class GameScreen implements Screen {
+class GameScreen implements Screen, InputProcessor {
 
     //temp & testing
 
@@ -27,10 +21,8 @@ class GameScreen implements Screen {
     private Viewport viewport;
 
     //graphic
-
     private SpriteBatch batch;
     private Texture background;
-
 
 
     //world parameters
@@ -38,7 +30,9 @@ class GameScreen implements Screen {
     private final int WORLD_HEIGHT = 640;
 
     //map
-    Map gameMap;
+    GameMap gameMap;
+    private Vector2 hexCor;
+
 
 
 
@@ -55,7 +49,10 @@ class GameScreen implements Screen {
 
         batch = new SpriteBatch();
 
-        gameMap = new Map();
+        //Map class
+        gameMap = new GameMap();
+
+
     }
 
     @Override
@@ -64,8 +61,13 @@ class GameScreen implements Screen {
 
         batch.draw(background,0,0,WORLD_WIDTH,WORLD_HEIGHT);
 
-        gameMap.mouseOnMap();
+        //gameMap.mouseOnMap();
+
+        //draw map with hexes
         gameMap.drawMap(batch);
+
+        //draw Castle
+
 
         batch.end();
 
@@ -87,7 +89,6 @@ class GameScreen implements Screen {
 
     @Override
     public void resume() {
-
     }
 
     @Override
@@ -97,7 +98,7 @@ class GameScreen implements Screen {
 
     @Override
     public void show() {
-
+        Gdx.input.setInputProcessor(this);
     }
 
     @Override
@@ -105,4 +106,46 @@ class GameScreen implements Screen {
 
     }
 
+    @Override
+    public boolean keyDown(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyTyped(char character) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        hexCor = gameMap.getHexCord(screenX, screenY);
+        gameMap.doActionOnHex(hexCor);
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        return false;
+    }
+
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        return false;
+    }
 }
