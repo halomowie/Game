@@ -61,17 +61,10 @@ class GameScreen implements Screen, InputProcessor {
 
         batch.draw(background,0,0,WORLD_WIDTH,WORLD_HEIGHT);
 
-        //gameMap.mouseOnMap();
-
         //draw map with hexes
         gameMap.drawMap(batch);
 
-        //draw Castle
-
-
         batch.end();
-
-
     }
 
 
