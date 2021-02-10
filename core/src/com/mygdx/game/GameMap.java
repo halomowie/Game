@@ -1,13 +1,7 @@
 package com.mygdx.game;
 
-import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.*;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Vector;
 import com.badlogic.gdx.math.Vector2;
 
 
@@ -17,11 +11,24 @@ class GameMap {
         InitMapObj();
         gameBuildings = new Buildings(this);
         hexStatus = new HexStatus(this);
+        gameUnits = new Units(this);
+        gInfo = new GameInfo(this);
 
-        gameBuildings.setCastle(new Vector2(1,4),1,this, hexStatus);
-        gameBuildings.setCastle(new Vector2(8,15), 2, this, hexStatus);
+        //gameBuildings.setCastle(new Vector2(1,4),1,this, hexStatus);
+        //gameBuildings.setCastle(new Vector2(8,15), 2, this, hexStatus);
 
-        startRegionClaims(hexStatus);
+        createCastleWithStartRegion(new Vector2(1,4),1,hexStatus,this);
+        createCastleWithStartRegion(new Vector2(8,15),2,hexStatus,this);
+
+        claimOneHex(new Vector2(1,7),2,hexStatus);
+        gameUnits.placeUnit(new Vector2(1,7),1,1,hexStatus,this,gameUnits);
+
+        //startRegionClaims(hexStatus);
+        gInfo.incomeOfCoins(2,hexStatus,this);
+        gInfo.getCoinsValue(1);
+
+
+        //hexStatus.getNumOfClaimedHexes(1,this);
     }
 
     //hexagon textures
@@ -30,8 +37,8 @@ class GameMap {
     Texture hexagonBlue;
 
     //map Size
-    private int xSize = 10;
-    private int ySize = 19;
+    final private int xHexBoardSize = 10;
+    final private int yHexBoardSize = 19;
 
 
     //Finding hex
@@ -40,18 +47,21 @@ class GameMap {
     float circleR;
 
     //Hex Size
-    private float xHexSize = 60;
-    private float yHexSize = xHexSize/2*(float)Math.sqrt(3);
+    final private float xHexSize = 60;
+    final private float yHexSize = xHexSize/2*(float)Math.sqrt(3);
 
     //2d Array of Sprites
-    private Sprite[][] Tiles = new Sprite[xSize][ySize];
+    private Sprite[][] Tiles = new Sprite[xHexBoardSize][yHexBoardSize];
 
 
-    //Buildings
+
     Buildings gameBuildings;
 
-    //Status of Hexes
     HexStatus hexStatus;
+
+    Units gameUnits;
+
+    GameInfo gInfo;
 
 
     //initialization of Textures and Hexes Position
@@ -77,6 +87,7 @@ class GameMap {
         if(team==1) {
             Tiles[(int)hexCor.x][(int)hexCor.y].setTexture(hexagonRed);
         }
+
         else if (team==2){
             Tiles[(int)hexCor.x][(int)hexCor.y].setTexture(hexagonBlue);
         }
@@ -85,22 +96,93 @@ class GameMap {
         hexStat.changeTeamNumber(hexCor,team);
     }
 
+
+
+
+
+    public void createCastleWithStartRegion(Vector2 castleCords, int teamNumber, HexStatus hexStat, GameMap gMap){
+        gameBuildings.setCastle(castleCords,teamNumber,gMap,hexStat);
+        claimStartingHexes(castleCords,teamNumber,hexStat);
+    }
+
+
+    public void claimStartingHexes(Vector2 castleCords, int teamNumber, HexStatus hexStat){
+        int x = (int)castleCords.x;
+        int y = (int)castleCords.y;
+
+        if(y%2==0) {
+            //Hex Upper
+            if (y + 2 < yHexBoardSize) {
+                claimOneHex(new Vector2(x, y + 2), teamNumber, hexStat);
+            }
+            //Hex Upper Right
+            if (y + 1 < yHexBoardSize) {
+                claimOneHex(new Vector2(x, y + 1), teamNumber, hexStat);
+            }
+            //Hex Bottom Right
+            if (y - 1 >= 0) {
+                claimOneHex(new Vector2(x, y - 1), teamNumber, hexStat);
+            }
+            //Hex Bottom
+            if (y - 2 >= 0) {
+                claimOneHex(new Vector2(x, y - 2), teamNumber, hexStat);
+            }
+            //Hex Bottom Left
+            if (x - 1 >= 0 && y - 1 >= 0) {
+                claimOneHex(new Vector2(x - 1, y - 1), teamNumber, hexStat);
+            }
+            //Hex Upper Left
+            if (x - 1 >= 0 && y + 1 < yHexBoardSize) {
+                claimOneHex(new Vector2(x - 1, y + 1), teamNumber, hexStat);
+            }
+        }
+        else if(y%2==1){
+            //Hex Upper
+            if (y + 2 < yHexBoardSize) {
+                claimOneHex(new Vector2(x, y + 2), teamNumber, hexStat);
+            }
+            //Hex Upper Left
+            if (y + 1 < yHexBoardSize) {
+                claimOneHex(new Vector2(x, y + 1), teamNumber, hexStat);
+            }
+            //Hex Bottom Left
+            if (y - 1 >= 0) {
+                claimOneHex(new Vector2(x, y - 1), teamNumber, hexStat);
+            }
+            //Hex Bottom
+            if (y - 2 >= 0) {
+                claimOneHex(new Vector2(x, y - 2), teamNumber, hexStat);
+            }
+            //Hex Bottom Right
+            if (x + 1 < xHexBoardSize && y - 1 >= 0) {
+                claimOneHex(new Vector2(x + 1, y - 1), teamNumber, hexStat);
+            }
+            //Hex Upper Right
+            if (x + 1 < xHexBoardSize && y + 1 < yHexBoardSize) {
+                claimOneHex(new Vector2(x + 1, y + 1), teamNumber, hexStat);
+            }
+        }
+    }
+
+
+
+    //Dropped from use!
     //Claims all hexes that surround castle
     public void startRegionClaims(HexStatus hexStat){
         int xCor, yCor;
 
-        for (int x = 0; x < xSize; x++) {
-            for (int y = 0; y < ySize; y++) {
+        for (int x = 0; x < xHexBoardSize; x++) {
+            for (int y = 0; y < yHexBoardSize; y++) {
                 if(hexStat.getIsCastle(new Vector2(x,y))) {
                     for(int teamNumber=1; teamNumber<=2; teamNumber++){
                     if(hexStat.getTeamNumber(new Vector2(x,y))==teamNumber) {
                         if(y%2==0) {
                             //Hex Upper
-                            if (y + 2 < ySize) {
+                            if (y + 2 < yHexBoardSize) {
                                 claimOneHex(new Vector2(x, y + 2), teamNumber, hexStat);
                             }
                             //Hex Upper Right
-                            if (y + 1 < ySize) {
+                            if (y + 1 < yHexBoardSize) {
                                 claimOneHex(new Vector2(x, y + 1), teamNumber, hexStat);
                             }
                             //Hex Bottom Right
@@ -116,17 +198,17 @@ class GameMap {
                                 claimOneHex(new Vector2(x - 1, y - 1), teamNumber, hexStat);
                             }
                             //Hex Upper Left
-                            if (x - 1 >= 0 && y + 1 < ySize) {
+                            if (x - 1 >= 0 && y + 1 < yHexBoardSize) {
                                 claimOneHex(new Vector2(x - 1, y + 1), teamNumber, hexStat);
                             }
                         }
                         else if(y%2==1){
                             //Hex Upper
-                            if (y + 2 < ySize) {
+                            if (y + 2 < yHexBoardSize) {
                                 claimOneHex(new Vector2(x, y + 2), teamNumber, hexStat);
                             }
                             //Hex Upper Left
-                            if (y + 1 < ySize) {
+                            if (y + 1 < yHexBoardSize) {
                                 claimOneHex(new Vector2(x, y + 1), teamNumber, hexStat);
                             }
                             //Hex Bottom Left
@@ -138,11 +220,11 @@ class GameMap {
                                 claimOneHex(new Vector2(x, y - 2), teamNumber, hexStat);
                             }
                             //Hex Bottom Right
-                            if (x + 1 < xSize && y - 1 >= 0) {
+                            if (x + 1 < xHexBoardSize && y - 1 >= 0) {
                                 claimOneHex(new Vector2(x + 1, y - 1), teamNumber, hexStat);
                             }
                             //Hex Upper Right
-                            if (x + 1 < xSize && y + 1 < ySize) {
+                            if (x + 1 < xHexBoardSize && y + 1 < yHexBoardSize) {
                                 claimOneHex(new Vector2(x + 1, y + 1), teamNumber, hexStat);
                             }
                         }
@@ -171,8 +253,8 @@ class GameMap {
 
     //initialization of textures
     void initTextures(){
-        for (int x = 0; x < xSize; x++) {
-            for (int y = 0; y < ySize; y++) {
+        for (int x = 0; x < xHexBoardSize; x++) {
+            for (int y = 0; y < yHexBoardSize; y++) {
                 Tiles[x][y] = new Sprite(hexagon, 0, 0, 190, 162);
                 Tiles[x][y].setSize(xHexSize, yHexSize);
             }
@@ -184,13 +266,15 @@ class GameMap {
     void drawMap (SpriteBatch spriteBatch) {
         drawHexes(spriteBatch);
         gameBuildings.drawBuilding(spriteBatch);
+        gameUnits.drawUnitsOnBoard(spriteBatch);
+        gInfo.drawFont(spriteBatch,20);
     }
 
 
     //Set hexes position
     void setHexesPosition(){
-        for (int x = 0; x < xSize; x++) {
-            for (int y = 0; y < ySize; y++) {
+        for (int x = 0; x < xHexBoardSize; x++) {
+            for (int y = 0; y < yHexBoardSize; y++) {
 
                 if (y % 2 == 0) {
                     Tiles[x][y].setPosition(15 + Tiles[x][y].getWidth()/2*3 * x, 20 + Tiles[x][y].getHeight()/2 * y);
@@ -204,8 +288,8 @@ class GameMap {
 
     //Draw hexes on board
     void drawHexes(SpriteBatch spriteBatch){
-        for (int x = 0; x < xSize; x++) {
-            for (int y = 0; y < ySize; y++) {
+        for (int x = 0; x < xHexBoardSize; x++) {
+            for (int y = 0; y < yHexBoardSize; y++) {
                 Tiles[x][y].draw(spriteBatch);
             }
         }
@@ -219,8 +303,8 @@ class GameMap {
         Vector2 hexID;
         mouseY = 640 - mouseY;
         double equa;
-        for (int x = 0; x < xSize; x++) {
-            for (int y = 0; y < ySize; y++) {
+        for (int x = 0; x < xHexBoardSize; x++) {
+            for (int y = 0; y < yHexBoardSize; y++) {
                 centerX = Tiles[x][y].getBoundingRectangle().getX() + Tiles[x][y].getBoundingRectangle().getWidth()/2;
                 centerY = Tiles[x][y].getBoundingRectangle().getY() + Tiles[x][y].getBoundingRectangle().getHeight()/2;
 
@@ -240,7 +324,8 @@ class GameMap {
     //Doing actions on specific Hex
     public void doActionOnHex(Vector2 hexCoordinates){
         if(hexCoordinates!=null) {
-            Tiles[(int) hexCoordinates.x][(int) hexCoordinates.y].setTexture(hexagonBlue);
+            //Tiles[(int) hexCoordinates.x][(int) hexCoordinates.y].setTexture(hexagonBlue);
+            hexStatus.getHexFullInfo(hexCoordinates,gameUnits);
         }
     }
 
@@ -254,13 +339,13 @@ class GameMap {
     }
 
 
-    //Getters
-    public int getxSize() {
-        return xSize;
+
+    public int getxHexBoardSize() {
+        return xHexBoardSize;
     }
 
-    public int getySize() {
-        return ySize;
+    public int getyHexBoardSize() {
+        return yHexBoardSize;
     }
 
     public float getCenterX() {

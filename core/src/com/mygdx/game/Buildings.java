@@ -40,6 +40,7 @@ public class Buildings  {
             castleSprite[i] = new Sprite(castle, 0, 0, 190, 162);
         }
     }
+
     public void setCastle(Vector2 hexCon,  int team,  GameMap gameMap, HexStatus hexStat){
         castleSprite[team].setPosition(gameMap.getHexPosition(hexCon).x,gameMap.getHexPosition(hexCon).y);
         castleSprite[team].setSize(gameMap.getxHexSize(),gameMap.getyHexSize());
