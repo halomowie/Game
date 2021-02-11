@@ -43,14 +43,16 @@ class GameScreen implements Screen, InputProcessor {
         camera = new OrthographicCamera();
         viewport = new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
 
+        //Map class
+        gameMap = new GameMap();
+
         //background
         background = new Texture("background.jpg");
 
 
         batch = new SpriteBatch();
 
-        //Map class
-        gameMap = new GameMap();
+
 
 
     }
@@ -117,7 +119,17 @@ class GameScreen implements Screen, InputProcessor {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         hexCor = gameMap.getHexCord(screenX, screenY);
-        gameMap.doActionOnHex(hexCor);
+
+        if(!gameMap.isBuying) {
+            gameMap.doActionOnHex(hexCor);
+            gameMap.buttons(screenX, screenY, gameMap);
+        }
+        else if(gameMap.isBuying){
+            gameMap.placeBoughtUnit(hexCor);
+        }
+        else if(gameMap.isUnitSelected){
+
+        }
         return false;
     }
 
@@ -129,6 +141,7 @@ class GameScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
+
         return false;
     }
 

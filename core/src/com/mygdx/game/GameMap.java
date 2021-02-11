@@ -14,18 +14,16 @@ class GameMap {
         gameUnits = new Units(this);
         gInfo = new GameInfo(this);
 
-        //gameBuildings.setCastle(new Vector2(1,4),1,this, hexStatus);
-        //gameBuildings.setCastle(new Vector2(8,15), 2, this, hexStatus);
 
-        createCastleWithStartRegion(new Vector2(1,4),1,hexStatus,this);
-        createCastleWithStartRegion(new Vector2(8,15),2,hexStatus,this);
+        Map1(hexStatus);
 
-        claimOneHex(new Vector2(1,7),2,hexStatus);
-        gameUnits.placeUnit(new Vector2(1,7),1,1,hexStatus,this,gameUnits);
+
+        //claimOneHex(new Vector2(1,7),2,hexStatus);
+        //gameUnits.placeUnit(new Vector2(1,7),1,1,hexStatus,this,gameUnits);
 
         //startRegionClaims(hexStatus);
-        gInfo.incomeOfCoins(2,hexStatus,this);
-        gInfo.getCoinsValue(1);
+
+        coinsUpdate(2);
 
 
         //hexStatus.getNumOfClaimedHexes(1,this);
@@ -55,6 +53,17 @@ class GameMap {
 
 
 
+    public int playerTeam = 1;
+    public boolean isBuying;
+    public boolean isPlaced;
+    public boolean isPaid;
+
+    public boolean isUnitSelected;
+    public Vector2 previousUnitLocation;
+    public int boughtUnitLvl;
+
+
+
     Buildings gameBuildings;
 
     HexStatus hexStatus;
@@ -62,6 +71,34 @@ class GameMap {
     Units gameUnits;
 
     GameInfo gInfo;
+
+    public void placeBoughtUnit(Vector2 hexCord){
+        gameUnits.placeUnit(hexCord, playerTeam, boughtUnitLvl, hexStatus, this, gameUnits, gInfo);
+
+        isBuying=false;
+    }
+
+    public void selectUnit(Vector2 hexCord, int playerTeam){
+
+    }
+
+
+    public void buttons(int xMouse, int yMouse, GameMap gMap){
+        //turnEnd(playerTeam);
+        gInfo.buttonEndTurn(xMouse,yMouse,gMap);
+        gInfo.shopButtons(xMouse,yMouse,gMap);
+    }
+
+    public void coinsUpdate(int numberOfTeams){
+        for(int x=1; x<numberOfTeams+1; x++){
+            gInfo.incomeOfCoins(x,hexStatus,this);
+            gInfo.getCoinsValue(x);
+        }
+    }
+
+    public void turnEnd(int playerTeam){
+        gInfo.updateCoinsValue(playerTeam);
+    }
 
 
     //initialization of Textures and Hexes Position
@@ -84,16 +121,17 @@ class GameMap {
     // - Team Number
     public void claimOneHex(Vector2 hexCor, int team, HexStatus hexStat){
 
-        if(team==1) {
-            Tiles[(int)hexCor.x][(int)hexCor.y].setTexture(hexagonRed);
-        }
+        if(!hexStat.getIsDisabled(hexCor)) {
+            if (team == 1) {
+                Tiles[(int) hexCor.x][(int) hexCor.y].setTexture(hexagonRed);
+            } else if (team == 2) {
+                Tiles[(int) hexCor.x][(int) hexCor.y].setTexture(hexagonBlue);
+            }
 
-        else if (team==2){
-            Tiles[(int)hexCor.x][(int)hexCor.y].setTexture(hexagonBlue);
+            hexStat.changeIsAreaTaken(hexCor, true);
+            hexStat.changeTeamNumber(hexCor, team);
+            coinsUpdate(2);
         }
-
-        hexStat.changeIsAreaTaken(hexCor,true);
-        hexStat.changeTeamNumber(hexCor,team);
     }
 
 
@@ -267,7 +305,8 @@ class GameMap {
         drawHexes(spriteBatch);
         gameBuildings.drawBuilding(spriteBatch);
         gameUnits.drawUnitsOnBoard(spriteBatch);
-        gInfo.drawFont(spriteBatch,20);
+        gInfo.drawFont(spriteBatch,playerTeam);
+        gInfo.drawShop(spriteBatch);
     }
 
 
@@ -290,7 +329,9 @@ class GameMap {
     void drawHexes(SpriteBatch spriteBatch){
         for (int x = 0; x < xHexBoardSize; x++) {
             for (int y = 0; y < yHexBoardSize; y++) {
-                Tiles[x][y].draw(spriteBatch);
+                if(!hexStatus.getIsDisabled(new Vector2(x,y))) {
+                    Tiles[x][y].draw(spriteBatch);
+                }
             }
         }
     }
@@ -325,8 +366,39 @@ class GameMap {
     public void doActionOnHex(Vector2 hexCoordinates){
         if(hexCoordinates!=null) {
             //Tiles[(int) hexCoordinates.x][(int) hexCoordinates.y].setTexture(hexagonBlue);
-            hexStatus.getHexFullInfo(hexCoordinates,gameUnits);
+            //claimOneHex(hexCoordinates,playerTeam,hexStatus);
+            //hexStatus.getHexFullInfo(hexCoordinates,gameUnits);
+
+            if(checkIfHasUnitOfCurrentPlayer(hexCoordinates)){
+                previousUnitLocation = hexCoordinates;
+                isUnitSelected=true;
+            }
         }
+    }
+
+    public void moveUnit(Vector2 hexCords){
+
+    }
+
+    public boolean checkIfHexesAreNeighbours(Vector2 hex1Cords, Vector2 hex2Cords){
+
+        int x1 = (int)hex1Cords.x;
+        int y1 = (int)hex1Cords.y;
+
+        int x2 = (int)hex2Cords.x;
+        int y2 = (int)hex1Cords.y;
+
+        if(y1%2==0){
+            if(y1+1==y2 && x1==x2){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean checkIfHasUnitOfCurrentPlayer(Vector2 hexCord){
+        return hexStatus.getIsOccupiedByUnit(hexCord) && hexStatus.getTeamNumber(hexCord) == playerTeam;
     }
 
     public void setHexColor(Vector2 hexCoordinates, int team){
@@ -338,6 +410,46 @@ class GameMap {
         }
     }
 
+
+    public void Map1(HexStatus hexStat){
+        createCastleWithStartRegion(new Vector2(1,4),1,hexStat,this);
+        createCastleWithStartRegion(new Vector2(8,15),2,hexStat,this);
+
+
+        hexStat.setIsDisabled(new Vector2(5,9));
+        hexStat.setIsDisabled(new Vector2(5,11));
+        hexStat.setIsDisabled(new Vector2(5,10));
+        hexStat.setIsDisabled(new Vector2(5,8));
+        hexStat.setIsDisabled(new Vector2(0,18));
+        hexStat.setIsDisabled(new Vector2(0,17));
+        hexStat.setIsDisabled(new Vector2(0,16));
+        hexStat.setIsDisabled(new Vector2(9,9));
+        hexStat.setIsDisabled(new Vector2(9,7));
+        hexStat.setIsDisabled(new Vector2(9,8));
+        hexStat.setIsDisabled(new Vector2(9,6));
+        hexStat.setIsDisabled(new Vector2(9,5));
+        hexStat.setIsDisabled(new Vector2(9,4));
+        hexStat.setIsDisabled(new Vector2(1,7));
+        hexStat.setIsDisabled(new Vector2(7,13));
+        hexStat.setIsDisabled(new Vector2(8,12));
+        hexStat.setIsDisabled(new Vector2(2,4));
+        hexStat.setIsDisabled(new Vector2(3,17));
+        hexStat.setIsDisabled(new Vector2(4,16));
+        hexStat.setIsDisabled(new Vector2(4,18));
+        hexStat.setIsDisabled(new Vector2(4,17));
+        hexStat.setIsDisabled(new Vector2(3,12));
+        hexStat.setIsDisabled(new Vector2(3,11));
+        hexStat.setIsDisabled(new Vector2(6,3));
+        hexStat.setIsDisabled(new Vector2(7,4));
+        hexStat.setIsDisabled(new Vector2(0,12));
+        hexStat.setIsDisabled(new Vector2(0,11));
+        hexStat.setIsDisabled(new Vector2(0,10));
+        hexStat.setIsDisabled(new Vector2(3,1));
+        hexStat.setIsDisabled(new Vector2(4,2));
+        hexStat.setIsDisabled(new Vector2(4,1));
+        hexStat.setIsDisabled(new Vector2(4,0));
+        hexStat.setIsDisabled(new Vector2(2,6));
+    }
 
 
     public int getxHexBoardSize() {

@@ -15,8 +15,9 @@ public class HexStatus {
         isOccupiedByUnit = new boolean[firstArraySize][secondArraySize];
         isBuildUp = new boolean[firstArraySize][secondArraySize];
         isCastle = new boolean[firstArraySize][secondArraySize];
+        isDisabled = new boolean[firstArraySize][secondArraySize];
 
-        getIsCastle(new Vector2(0, 0));
+        //getIsCastle(new Vector2(0, 0));
 
 
     }
@@ -25,6 +26,7 @@ public class HexStatus {
     private boolean[][] isOccupiedByUnit;
     private boolean[][] isBuildUp;
     private boolean[][] isCastle;
+    private boolean[][] isDisabled;
     private int[][] TeamNumber;
 
     private GameMap gameMap;
@@ -72,6 +74,10 @@ public class HexStatus {
         return TeamNumber[(int) hexCords.x][(int) hexCords.y];
     }
 
+    public boolean getIsDisabled(Vector2 hexCords) {
+        return isDisabled[(int) hexCords.x][(int) hexCords.y];
+    }
+
     public void getHexFullInfo(Vector2 hexCor, Units gUnits) {
         System.out.printf("Info about hex [%d,%d] \n", (int) hexCor.x, (int) hexCor.y);
         System.out.printf("Is build up? %b \n", getIsBuildUp(hexCor));
@@ -98,4 +104,10 @@ public class HexStatus {
         }
         return claimedAreas;
     }
+
+    public void setIsDisabled(Vector2 hexCor){
+        isDisabled[(int)hexCor.x][(int)hexCor.y]=true;
+    }
+
+
 }

@@ -40,8 +40,8 @@ public class Units {
 
     public void initTextures(){
         LVL1 = new Texture("LVL1.png");
-        //LVL2 = new Texture("LVL2.png");
-        //LVL3 = new Texture("LVL3.png");
+        LVL2 = new Texture("LVL2.png");
+        LVL3 = new Texture("LVL3.png");
 
         for (int x = 0; x<xSize; x++){
             for (int y = 0; y<ySize; y++){
@@ -83,7 +83,7 @@ public class Units {
         unitsSprite[x][y].setPosition(gameMap.getHexPosition(hexCor).x,gameMap.getHexPosition(hexCor).y);
     }
 
-    public void placeUnit(Vector2 hexCor , int teamNum, int lvl, HexStatus hexStatus, GameMap gameMap, Units gUnits){
+    public void placeUnit(Vector2 hexCor , int teamNum, int lvl, HexStatus hexStatus, GameMap gameMap, Units gUnits, GameInfo gInfo){
         assignTextureToUnit(hexCor,lvl, gameMap);
         int x;
         int y;
@@ -93,11 +93,14 @@ public class Units {
 
         if(teamNum==hexStatus.getTeamNumber(hexCor) &&
                 !hexStatus.getIsBuildUp(hexCor) &&
-                !hexStatus.getIsOccupiedByUnit(hexCor)){
+                !hexStatus.getIsOccupiedByUnit(hexCor) &&
+                gInfo.isMoneyEfficient(lvl,teamNum)){
             gUnits.isAlive[x][y] = true;
             gUnits.isReady[x][y] = true;
             gUnits.level[x][y]= lvl;
             hexStatus.changeIsOccupiedByUnit(hexCor,true);
+            gInfo.moneyPay(lvl,teamNum,gameMap);
+
         }
     }
 
