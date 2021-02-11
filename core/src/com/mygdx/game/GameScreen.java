@@ -120,15 +120,16 @@ class GameScreen implements Screen, InputProcessor {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         hexCor = gameMap.getHexCord(screenX, screenY);
 
-        if(!gameMap.isBuying) {
+
+        if(!gameMap.isBuying && !gameMap.isUnitSelected) {
             gameMap.doActionOnHex(hexCor);
             gameMap.buttons(screenX, screenY, gameMap);
         }
         else if(gameMap.isBuying){
             gameMap.placeBoughtUnit(hexCor);
         }
-        else if(gameMap.isUnitSelected){
-
+        else if(!gameMap.isBuying && gameMap.isUnitSelected){
+            gameMap.moveUnit(hexCor);
         }
         return false;
     }

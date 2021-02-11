@@ -219,11 +219,10 @@ public class GameInfo {
 
     public void buttonEndTurn(int xMouse, int yMouse, GameMap gMap){
         yMouse=640-yMouse;
-        if(xMouse>xPosEndTurn &&
-                xMouse<xPosEndTurn+180 &&
-                yMouse<yPosEndTurn &&
-                yMouse>yPosEndTurn-30){
+        if(xMouse>xPosEndTurn && xMouse<xPosEndTurn+180 && yMouse<yPosEndTurn && yMouse>yPosEndTurn-30){
+
             gMap.turnEnd(gMap.playerTeam);
+
             if(gMap.playerTeam==1){
                 gMap.playerTeam=2;
 

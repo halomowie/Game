@@ -55,8 +55,8 @@ class GameMap {
 
     public int playerTeam = 1;
     public boolean isBuying;
-    public boolean isPlaced;
-    public boolean isPaid;
+    public boolean areNeighbours;
+    public Vector2[] castleCords = new Vector2[4];
 
     public boolean isUnitSelected;
     public Vector2 previousUnitLocation;
@@ -73,8 +73,9 @@ class GameMap {
     GameInfo gInfo;
 
     public void placeBoughtUnit(Vector2 hexCord){
-        gameUnits.placeUnit(hexCord, playerTeam, boughtUnitLvl, hexStatus, this, gameUnits, gInfo);
-
+        if(hexCord!=null && checkIfHexesAreNeighbours(castleCords[playerTeam],hexCord)) {
+            gameUnits.placeUnit(hexCord, playerTeam, boughtUnitLvl, hexStatus, this, gameUnits, gInfo);
+        }
         isBuying=false;
     }
 
@@ -98,6 +99,14 @@ class GameMap {
 
     public void turnEnd(int playerTeam){
         gInfo.updateCoinsValue(playerTeam);
+
+        for(int x=0; x<xHexBoardSize; x++){
+            for(int y=0; y<yHexBoardSize; y++){
+                if(!gameUnits.isReady[x][y] && (playerTeam == hexStatus.getTeamNumber(new Vector2(x,y))) && hexStatus.getIsOccupiedByUnit(new Vector2(x,y))){
+                    gameUnits.isReady[x][y] = true;
+                }
+            }
+        }
     }
 
 
@@ -304,7 +313,7 @@ class GameMap {
     void drawMap (SpriteBatch spriteBatch) {
         drawHexes(spriteBatch);
         gameBuildings.drawBuilding(spriteBatch);
-        gameUnits.drawUnitsOnBoard(spriteBatch);
+        gameUnits.drawUnitsOnBoard(spriteBatch, hexStatus);
         gInfo.drawFont(spriteBatch,playerTeam);
         gInfo.drawShop(spriteBatch);
     }
@@ -367,7 +376,7 @@ class GameMap {
         if(hexCoordinates!=null) {
             //Tiles[(int) hexCoordinates.x][(int) hexCoordinates.y].setTexture(hexagonBlue);
             //claimOneHex(hexCoordinates,playerTeam,hexStatus);
-            //hexStatus.getHexFullInfo(hexCoordinates,gameUnits);
+            hexStatus.getHexFullInfo(hexCoordinates,gameUnits);
 
             if(checkIfHasUnitOfCurrentPlayer(hexCoordinates)){
                 previousUnitLocation = hexCoordinates;
@@ -376,9 +385,96 @@ class GameMap {
         }
     }
 
-    public void moveUnit(Vector2 hexCords){
-
+    public void moveUnit(Vector2 hexCordsToMove){
+        if(hexCordsToMove!=null && !hexStatus.getIsDisabled(hexCordsToMove)) {
+            moveToArea(hexCordsToMove);
+            fightMove(hexCordsToMove);
+            isUnitSelected = false;
+        }
     }
+
+    public void moveToArea(Vector2 hexCordsToMove){
+
+            if (checkIfHexesAreNeighbours(previousUnitLocation, hexCordsToMove) && gameUnits.isReady[(int) previousUnitLocation.x][(int) previousUnitLocation.y]
+                    && gameUnits.isAlive[(int) previousUnitLocation.x][(int) previousUnitLocation.y]
+                    && !hexStatus.getIsBuildUp(hexCordsToMove)
+                    && !hexStatus.getIsOccupiedByUnit(hexCordsToMove)) {
+                hexStatus.changeIsOccupiedByUnit(previousUnitLocation, false);
+                gameUnits.isAlive[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = gameUnits.isAlive[(int) previousUnitLocation.x][(int) previousUnitLocation.y];
+                gameUnits.isAlive[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = false;
+
+                gameUnits.isReady[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = false;
+                gameUnits.isReady[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = gameUnits.isReady[(int) previousUnitLocation.x][(int) previousUnitLocation.y];
+
+                gameUnits.level[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = gameUnits.level[(int) previousUnitLocation.x][(int) previousUnitLocation.y];
+                gameUnits.level[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = 0;
+
+                gameUnits.setUnitSpritePosition(hexCordsToMove,gameUnits.level[(int) hexCordsToMove.x][(int) hexCordsToMove.y],this);
+                claimOneHex(hexCordsToMove, playerTeam, hexStatus);
+                hexStatus.changeIsOccupiedByUnit(hexCordsToMove, true);
+
+
+
+        }
+    }
+
+    public void fightMove(Vector2 hexCordsToMove){
+        //unit is ready and alive,
+        if(checkIfHexesAreNeighbours(previousUnitLocation, hexCordsToMove) && gameUnits.isReady[(int) previousUnitLocation.x][(int) previousUnitLocation.y]
+                && gameUnits.isAlive[(int) previousUnitLocation.x][(int) previousUnitLocation.y]){
+
+            //Check if hexCordsToMove has unit, team value and level value
+            if(hexStatus.getIsOccupiedByUnit(hexCordsToMove) && (hexStatus.getTeamNumber(hexCordsToMove)!=playerTeam)){
+                if(gameUnits.level[(int)hexCordsToMove.x][(int)hexCordsToMove.y] > gameUnits.level[(int)previousUnitLocation.x][(int)previousUnitLocation.y]){
+                    //nothig happens attacker level to small
+                }
+                else if(gameUnits.level[(int)hexCordsToMove.x][(int)hexCordsToMove.y] < gameUnits.level[(int)previousUnitLocation.x][(int)previousUnitLocation.y]){
+                    //attacker level is higher, defender dies, area claimed
+                    hexStatus.changeIsOccupiedByUnit(previousUnitLocation,false);
+
+                    gameUnits.isAlive[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = true;
+                    gameUnits.isAlive[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = false;
+
+                    gameUnits.isReady[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = false;
+                    gameUnits.isReady[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = gameUnits.isReady[(int) previousUnitLocation.x][(int) previousUnitLocation.y];
+
+                    gameUnits.level[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = gameUnits.level[(int) previousUnitLocation.x][(int) previousUnitLocation.y];
+                    gameUnits.level[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = 0;
+
+                    gameUnits.setUnitSpritePosition(hexCordsToMove,gameUnits.level[(int) hexCordsToMove.x][(int) hexCordsToMove.y],this);
+                    claimOneHex(hexCordsToMove, playerTeam, hexStatus);
+                    hexStatus.changeIsOccupiedByUnit(hexCordsToMove, true);
+                }
+                else if(gameUnits.level[(int)hexCordsToMove.x][(int)hexCordsToMove.y] == gameUnits.level[(int)previousUnitLocation.x][(int)previousUnitLocation.y]){
+                    //levels equal, both units die, attacker claims area
+                    hexStatus.changeIsOccupiedByUnit(previousUnitLocation,false);
+
+                    gameUnits.isAlive[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = false;
+                    gameUnits.isAlive[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = false;
+
+                    gameUnits.isReady[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = false;
+                    gameUnits.isReady[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = gameUnits.isReady[(int) previousUnitLocation.x][(int) previousUnitLocation.y];
+
+                    gameUnits.level[(int) hexCordsToMove.x][(int) hexCordsToMove.y] = 0;
+                    gameUnits.level[(int) previousUnitLocation.x][(int) previousUnitLocation.y] = 0;
+
+                    gameUnits.setUnitSpritePosition(hexCordsToMove,gameUnits.level[(int) hexCordsToMove.x][(int) hexCordsToMove.y],this);
+                    claimOneHex(hexCordsToMove, playerTeam, hexStatus);
+                    hexStatus.changeIsOccupiedByUnit(hexCordsToMove, false);
+                }
+            }
+            //check if area has enemy Castle, and attacker lvl 3
+            else if(hexStatus.getIsBuildUp(hexCordsToMove) && hexStatus.getIsCastle(hexCordsToMove) && (hexStatus.getTeamNumber(hexCordsToMove)!=playerTeam)){
+                if(gameUnits.level[(int) previousUnitLocation.x][(int) previousUnitLocation.y] == 3 ){
+                    claimOneHex(hexCordsToMove, playerTeam, hexStatus);
+                }
+            }
+
+
+        }
+    }
+
+
 
     public boolean checkIfHexesAreNeighbours(Vector2 hex1Cords, Vector2 hex2Cords){
 
@@ -386,15 +482,28 @@ class GameMap {
         int y1 = (int)hex1Cords.y;
 
         int x2 = (int)hex2Cords.x;
-        int y2 = (int)hex1Cords.y;
+        int y2 = (int)hex2Cords.y;
+
+
 
         if(y1%2==0){
-            if(y1+1==y2 && x1==x2){
-                return true;
+            if((x1==x2 && y1+2==y2) || (x1==x2 && y1+1==y2) || (x1==x2 && y1-1==y2) || (x1==x2 && y1-2==y2) || (x1-1==x2 && y1-1==y2) || (x1-1==x2 && y1+1==y2)){
+                areNeighbours = true;
+            }
+            else {
+                areNeighbours = false;
+            }
+
+        }
+        else if(y1%2==1){
+            if((x1==x2 && y1+2==y2) || (x1+1==x2 && y1+1==y2) || (x1+1==x2 && y1-1==y2) || (x1==x2 && y1-2==y2) || (x1==x2 && y1-1==y2) || (x1==x2 && y1+1==y2)){
+                areNeighbours = true;
+            }
+            else {
+                areNeighbours = false;
             }
         }
-
-        return false;
+        return areNeighbours;
     }
 
     public boolean checkIfHasUnitOfCurrentPlayer(Vector2 hexCord){
@@ -411,9 +520,12 @@ class GameMap {
     }
 
 
+
     public void Map1(HexStatus hexStat){
-        createCastleWithStartRegion(new Vector2(1,4),1,hexStat,this);
+        createCastleWithStartRegion(new Vector2(7,8),1,hexStat,this);
+        castleCords[1] = new Vector2(7,8);
         createCastleWithStartRegion(new Vector2(8,15),2,hexStat,this);
+        castleCords[2] = new Vector2(8,15);
 
 
         hexStat.setIsDisabled(new Vector2(5,9));
