@@ -18,21 +18,16 @@ class GameMap {
         Map1(hexStatus);
 
 
-        //claimOneHex(new Vector2(1,7),2,hexStatus);
-        //gameUnits.placeUnit(new Vector2(1,7),1,1,hexStatus,this,gameUnits);
-
-        //startRegionClaims(hexStatus);
 
         coinsUpdate(2);
 
-
-        //hexStatus.getNumOfClaimedHexes(1,this);
     }
 
     //hexagon textures
     Texture hexagon;
     Texture hexagonRed;
     Texture hexagonBlue;
+    Texture hexagonGreen;
 
     //map Size
     final private int xHexBoardSize = 10;
@@ -115,6 +110,7 @@ class GameMap {
         hexagon = new Texture("hexagonGray.png");
         hexagonRed = new Texture("HexagonRed.png");
         hexagonBlue = new Texture("HexagonBlue.png");
+        hexagonGreen = new Texture("HexagonGreen.png");
 
         initTextures();
         setHexesPosition();
@@ -380,18 +376,35 @@ class GameMap {
 
             if(checkIfHasUnitOfCurrentPlayer(hexCoordinates)){
                 previousUnitLocation = hexCoordinates;
+                Tiles[(int)hexCoordinates.x][(int)hexCoordinates.y].setTexture(hexagonGreen);
                 isUnitSelected=true;
             }
         }
     }
 
     public void moveUnit(Vector2 hexCordsToMove){
-        if(hexCordsToMove!=null && !hexStatus.getIsDisabled(hexCordsToMove)) {
+
+        if(hexCordsToMove==null){
+            return;
+        }
+
+        if(hexStatus.getIsDisabled(hexCordsToMove)){
+            return;
+        }
+
+        //if(hexCordsToMove!=null && !hexStatus.getIsDisabled(hexCordsToMove)) {
             moveToArea(hexCordsToMove);
             fightMove(hexCordsToMove);
+
+            if(playerTeam==1){
+                Tiles[(int)previousUnitLocation.x][(int)previousUnitLocation.y].setTexture(hexagonRed);
+            }
+            else if(playerTeam==2){
+                Tiles[(int)previousUnitLocation.x][(int)previousUnitLocation.y].setTexture(hexagonBlue);
+            }
             isUnitSelected = false;
         }
-    }
+    //}
 
     public void moveToArea(Vector2 hexCordsToMove){
 
@@ -522,8 +535,8 @@ class GameMap {
 
 
     public void Map1(HexStatus hexStat){
-        createCastleWithStartRegion(new Vector2(7,8),1,hexStat,this);
-        castleCords[1] = new Vector2(7,8);
+        createCastleWithStartRegion(new Vector2(7,11),1,hexStat,this);
+        castleCords[1] = new Vector2(7,11);
         createCastleWithStartRegion(new Vector2(8,15),2,hexStat,this);
         castleCords[2] = new Vector2(8,15);
 
